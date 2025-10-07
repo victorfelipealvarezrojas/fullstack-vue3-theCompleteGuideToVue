@@ -19,14 +19,15 @@ export const seedData: dataInterface[] = [
       { details: 'Viajar', edit: false },
       { details: 'Pagar facturas', edit: false },
       { details: 'Llamar a mamá', edit: false },
+      { details: 'Revisar correos electrónicos', edit: false },
     ],
-    active: true,
+    active: false,
   },
   {
     id: 2,
     abbvTitle: 'Mar',
     fullTitle: 'Martes',
-    events: [{ details: 'Reunión de trabajo', edit: false }],
+    events: [{ details: 'Reunión de trabajo', edit: false }, { details: 'Cena con amigos', edit: false }],
     active: false,
   },
   {
@@ -65,6 +66,6 @@ export const seedData: dataInterface[] = [
     abbvTitle: 'Dom',
     fullTitle: 'Domingo',
     events: [{ details: 'Descanso y relajación', edit: false }],
-    active: false,
+    active: true,
   },
 ]

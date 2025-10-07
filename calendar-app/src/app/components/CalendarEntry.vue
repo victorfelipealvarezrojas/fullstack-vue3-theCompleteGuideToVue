@@ -1,15 +1,29 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue';
+import { store } from '../store';
+
+const eventInput = ref('');
+
+const titleOfActivityDay = computed(() => {
+  return store.getters.activeDay()!.fullTitle;
+})
+
+const handleSubmit = () => {
+  if (eventInput.value.trim() === '') return;
+  store.actions.setNewEvent(eventInput.value);
+}
+
 </script>
 
 <template>
   <div id="calendar-entry">
-    <div class="calendar-entry-note">
-      <input type="text" placeholder="New Event" />
+    <form @submit.prevent="handleSubmit" class="calendar-entry-note">
+      <input type="text" placeholder="New Event" v-model="eventInput" />
       <div class="calendar-entry-day">
-        <span class="bold">Day:</span> Monday, 12th
+        <span class="bold">Day:{{ titleOfActivityDay }}</span> Monday, 12th
       </div>
-      <button class="button is-primary submit">Add Event</button>
-    </div>
+      <button type="submit" class="button is-primary submit">Add Event</button>
+    </form>
   </div>
 </template>
 

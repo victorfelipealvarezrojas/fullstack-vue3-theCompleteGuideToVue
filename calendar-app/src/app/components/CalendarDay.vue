@@ -1,19 +1,24 @@
 <script setup lang="ts">
-import { dataInterface } from '../seed';
+import type { dataInterface } from '../seed';
 import CalendarEvent from './CalendarEvent.vue';
+import { store } from '../store';
 
 const props = defineProps<{
   day: dataInterface
 }>()
 
+const setActiveDaySelector = () => {
+  store.actions.setActive(props.day.id);
+}
+
 </script>
 
 <template>
-  <div class="day column">
+  <div class="day column" @:click="setActiveDaySelector">
     <div class="day-banner has-text-centered">{{ props.day.abbvTitle }}</div>
     <div class="day-details">
       <div class="day-number">{{ props.day.id }}</div>
-      <CalendarEvent v-for="(event, index) in day.events" :key="index" :event-calendar="event"/>
+      <CalendarEvent v-for="(event, index) in day.events" :key="index" :event-calendar="event" />
     </div>
   </div>
 </template>
