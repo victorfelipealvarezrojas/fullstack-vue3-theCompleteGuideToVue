@@ -11,6 +11,18 @@ const setActiveDaySelector = () => {
   store.actions.setActive(props.day.id);
 }
 
+const handleEditEventStateSelected = (dayId: number, details: string) => {
+ store.actions.setEditEventActiveState(dayId, details);
+}
+
+const handleDeleteEvent = (dayId: number, details: string) => {
+  store.actions.deleteEvent(dayId, details);
+}
+
+const handleUpdateEvent = (dayId: number, oldDec: string, newDec: string) => {
+  store.actions.setEventDescription(dayId, oldDec, newDec);
+}
+
 </script>
 
 <template>
@@ -18,7 +30,15 @@ const setActiveDaySelector = () => {
     <div class="day-banner has-text-centered">{{ props.day.abbvTitle }}</div>
     <div class="day-details">
       <div class="day-number">{{ props.day.id }}</div>
-      <CalendarEvent v-for="(event, index) in day.events" :key="index" :event-calendar="event" />
+      <CalendarEvent
+        v-for="(event, index) in day.events"
+        :key="index"
+        :day-id="props.day.id"
+        :event-calendar="event"
+        @edit="handleEditEventStateSelected"
+        @delete="handleDeleteEvent"
+        @update="handleUpdateEvent"
+      />
     </div>
   </div>
 </template>

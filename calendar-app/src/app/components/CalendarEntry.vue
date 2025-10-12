@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { store } from '../store';
 
 const eventInput = ref('');
@@ -8,10 +8,20 @@ const titleOfActivityDay = computed(() => {
   return store.getters.activeDay()!.fullTitle;
 })
 
+const textEditValue = computed(() => {
+  return store.getters.activeEventsDescription(store.getters.activeDay()!.id);
+})
+
 const handleSubmit = () => {
   if (eventInput.value.trim() === '') return;
   store.actions.setNewEvent(eventInput.value);
 }
+
+watch(textEditValue, (newEvent) => {
+  eventInput.value = ''
+  if (newEvent) eventInput.value = newEvent
+
+}, { immediate: true }) // immediate: true ejecuta el watch inmediatamente
 
 </script>
 
