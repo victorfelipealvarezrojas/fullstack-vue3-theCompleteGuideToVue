@@ -1,0 +1,140 @@
+<script setup lang="ts">
+import { computed, onBeforeMount, reactive, ref } from "vue";
+import type { inputFieldErrors, inputField } from "./InputFormInterfaces";
+import { apiClient } from "@/api/client";
+
+const newItemDomReference = ref<HTMLInputElement | null>(null);
+
+const formData = reactive({
+  field: {
+    newItem: "",
+    email: "",
+    urgency: "",
+    termsAndConditions: false,
+  },
+  fieldError: {
+    newItem: undefined,
+    email: undefined,
+    urgency: undefined,
+    termsAndConditions: undefined,
+  },
+  items: [] as string[],
+  loading: false,
+  saveStatus: "READY",
+})
+const fieldErrors: inputFieldErrors = formData.fieldError;
+const items = formData.items as string[];
+
+onBeforeMount(() => {
+  formData.loading = true;
+  apiClient.loadItems().then((items: string[]) => {
+    formData.items.push(...items);
+    formData.loading = false;
+  });
+});
+
+const submitForm = (evt: Event) => {
+  evt.preventDefault();
+  const errors = validateForm(formData.field);
+
+  for (const key in fieldErrors) {
+    const k = key as keyof inputFieldErrors;
+    fieldErrors[k] = errors[k];
+  }
+
+  if ((Object.keys(errors).length) > 0) return;
+  items.push(formData.field.newItem);
+};
+
+const validateForm = (fields: inputField) => {
+  const errors: Partial<inputFieldErrors> = {};
+
+  if (!fields.newItem) errors.newItem = "New Item Required";
+  if (!fields.email) errors.email = "Email Required";
+  if (!fields.urgency) errors.urgency = "Urgency Required";
+  if (!fields.termsAndConditions) {
+    errors.termsAndConditions = "Terms and conditions have to be approved";
+  }
+  if (fields.email && !isEmail(fields.email)) {
+    errors.email = "Invalid Email";
+  }
+
+  return errors;
+};
+
+const isEmail = (email: string) => {
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return emailRegex.test(email);
+};
+
+const isNewItemInputLimitExceeded = computed(() => {
+  return formData.field.newItem.length > 20;
+});
+
+const isNotUrgent = computed(() => {
+  return formData.field.urgency === "Nonessential";
+});
+
+</script>
+
+<template>
+  <div class="input-form">
+    <form @submit="submitForm" class="ui form">
+      <div class="field">
+        <input ref="newItemDomReference" v-model="formData.field.newItem" type="text" placeholder="Add an item!">
+        <span style="color: red">{{ fieldErrors.newItem }}</span>
+        <span v-if="isNewItemInputLimitExceeded" style="color: red; display: block">
+          Must be under twenty characters
+        </span>
+      </div>
+      <div class="field">
+        <input v-model="formData.field.email" type="text" placeholder="Add an email!">
+        <span style="color: red">{{ fieldErrors.email }}</span>
+      </div>
+      <div class="field">
+        <label style="color: aliceblue;">Urgency</label>
+        <select v-model="formData.field.urgency" class="ui fluid search dropdown">
+          <option disabled value="">Please select one</option>
+          <option>Nonessential</option>
+          <option>Moderate</option>
+          <option>Urgent</option>
+        </select>
+        <span style="color: red">{{ fieldErrors.urgency }}</span>
+        <span v-if="isNotUrgent" style="color: red; display: block">
+          Must be moderate to urgent
+        </span>
+      </div>
+      <div class="field">
+        <div class="ui checkbox">
+          <input v-model="formData.field.termsAndConditions" type="checkbox" />
+          <label style="color: aliceblue;">I accept the terms and conditions</label>
+          <span style="color: red">{{ fieldErrors.termsAndConditions }}</span>
+        </div>
+      </div>
+      <div>
+        <button :disabled="isNewItemInputLimitExceeded || isNotUrgent" class="ui button">Submit</button>
+      </div>
+    </form>
+    <div class="ui segment">
+      <h4 class="ui header">Items</h4>
+      <ul>
+        <li v-for="(item, id) in items" :key="id" class="item">{{ item }}-{{ id }}</li>
+      </ul>
+    </div>
+  </div>
+  <code style="margin-top: 2rem; display: block; font-size: 1rem; white-space: pre-wrap;">
+  {{ JSON.stringify(formData, null, 2) }}
+</code>
+</template>
+
+<style scoped>
+a .input-form {
+  max-width: 30rem;
+  margin: 0 auto;
+}
+
+li {
+  text-align: left;
+  color: black;
+}
+</style>

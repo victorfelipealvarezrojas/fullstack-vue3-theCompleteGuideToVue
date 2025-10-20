@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ButtonRow from "./components/buttons/ButtonRow.vue";
+import InputForm from "./components/text/InputForm.vue";
 </script>
 
 <template>
@@ -8,6 +9,9 @@ import ButtonRow from "./components/buttons/ButtonRow.vue";
   </div>
   <div class="buttons">
     <ButtonRow />
+  </div>
+    <div class="buttons">
+    <InputForm />
   </div>
 </template>
 
