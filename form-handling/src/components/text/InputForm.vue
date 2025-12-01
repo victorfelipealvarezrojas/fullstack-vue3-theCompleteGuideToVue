@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeMount, reactive, ref } from "vue";
+import { computed, onBeforeMount, reactive, ref, toRefs } from "vue";
 import type { inputFieldErrors, inputField } from "./InputFormInterfaces";
 import { apiClient } from "@/api/client";
 
@@ -22,20 +22,21 @@ const formData = reactive({
   loading: false,
   saveStatus: "READY",
 })
+
+const { saveStatus, items, field, loading } = toRefs(formData);
 const fieldErrors: inputFieldErrors = formData.fieldError;
-const items = formData.items as string[];
 
 onBeforeMount(() => {
   formData.loading = true;
-  apiClient.loadItems().then((items: string[]) => {
-    formData.items.push(...items);
+  apiClient.loadItems().then((myItems: string[]) => {
+    items.value.push(...myItems);
     formData.loading = false;
   });
 });
 
 const submitForm = (evt: Event) => {
   evt.preventDefault();
-  const errors = validateForm(formData.field);
+  const errors = validateForm(field.value);
 
   for (const key in fieldErrors) {
     const k = key as keyof inputFieldErrors;
@@ -43,7 +44,23 @@ const submitForm = (evt: Event) => {
   }
 
   if ((Object.keys(errors).length) > 0) return;
-  items.push(formData.field.newItem);
+
+  const allNewItems = [...formData.items, field.value.newItem];
+
+  saveStatus.value = "SAVING";
+  apiClient.saveItems(allNewItems)
+    .then(() => {
+      items.value = allNewItems;
+      field.value.newItem = "";
+      field.value.email = "";
+      field.value.urgency = "";
+      field.value.termsAndConditions = false;
+      saveStatus.value = "SUCCESS";
+    })
+    .catch((err) => {
+      console.log(err);
+      saveStatus.value = "ERROR";
+    });
 };
 
 const validateForm = (fields: inputField) => {
@@ -68,11 +85,11 @@ const isEmail = (email: string) => {
 };
 
 const isNewItemInputLimitExceeded = computed(() => {
-  return formData.field.newItem.length > 20;
+  return field.value.newItem.length > 20;
 });
 
 const isNotUrgent = computed(() => {
-  return formData.field.urgency === "Nonessential";
+  return field.value.urgency === "Nonessential";
 });
 
 </script>
@@ -81,19 +98,19 @@ const isNotUrgent = computed(() => {
   <div class="input-form">
     <form @submit="submitForm" class="ui form">
       <div class="field">
-        <input ref="newItemDomReference" v-model="formData.field.newItem" type="text" placeholder="Add an item!">
+        <input ref="newItemDomReference" v-model="field.newItem" type="text" placeholder="Add an item!">
         <span style="color: red">{{ fieldErrors.newItem }}</span>
         <span v-if="isNewItemInputLimitExceeded" style="color: red; display: block">
           Must be under twenty characters
         </span>
       </div>
       <div class="field">
-        <input v-model="formData.field.email" type="text" placeholder="Add an email!">
+        <input v-model="field.email" type="text" placeholder="Add an email!">
         <span style="color: red">{{ fieldErrors.email }}</span>
       </div>
       <div class="field">
         <label style="color: aliceblue;">Urgency</label>
-        <select v-model="formData.field.urgency" class="ui fluid search dropdown">
+        <select v-model="field.urgency" class="ui fluid search dropdown">
           <option disabled value="">Please select one</option>
           <option>Nonessential</option>
           <option>Moderate</option>
@@ -106,18 +123,31 @@ const isNotUrgent = computed(() => {
       </div>
       <div class="field">
         <div class="ui checkbox">
-          <input v-model="formData.field.termsAndConditions" type="checkbox" />
+          <input v-model="field.termsAndConditions" type="checkbox" />
           <label style="color: aliceblue;">I accept the terms and conditions</label>
           <span style="color: red">{{ fieldErrors.termsAndConditions }}</span>
         </div>
       </div>
       <div>
-        <button :disabled="isNewItemInputLimitExceeded || isNotUrgent" class="ui button">Submit</button>
+        <button v-if="saveStatus === 'SAVING'" disabled class="ui button">
+          Saving...
+        </button>
+        <button v-if="saveStatus === 'SUCCESS'" :disabled="isNewItemInputLimitExceeded || isNotUrgent"
+          class="ui button">
+          Saved! Submit another
+        </button>
+        <button v-if="saveStatus === 'ERROR'" :disabled="isNewItemInputLimitExceeded || isNotUrgent" class="ui button">
+          Save Failed - Retry?
+        </button>
+        <button v-if="saveStatus === 'READY'" :disabled="isNewItemInputLimitExceeded || isNotUrgent" class="ui button">
+          Submit
+        </button>
       </div>
     </form>
     <div class="ui segment">
       <h4 class="ui header">Items</h4>
       <ul>
+        <div v-if="loading" class="ui active inline loader"></div>
         <li v-for="(item, id) in items" :key="id" class="item">{{ item }}-{{ id }}</li>
       </ul>
     </div>

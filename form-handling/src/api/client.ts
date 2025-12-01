@@ -19,5 +19,5 @@ export const apiClient = {
         resolve({ success })
       }, 1000)
     })
-  },
+  }
 }
